@@ -19,6 +19,7 @@
 package de.gematik.ti.erp.app.idp.usecase
 
 import android.net.Uri
+import android.util.Log
 import de.gematik.ti.erp.app.BCProvider
 import de.gematik.ti.erp.app.api.Result
 import de.gematik.ti.erp.app.api.unwrap
@@ -233,37 +234,39 @@ class IdpBasicUseCase @Inject constructor(
     }
 
     suspend fun challengeFlow(
-        initialData: IdpInitialData,
+        //initialData: IdpInitialData,
         scope: IdpScope,
     ): IdpChallengeFlowResult {
-        val (config, pukSigKey, _, state, nonce) = initialData
-        val codeChallenge = initialData.codeChallenge
+//        val (config, pukSigKey, _, state, nonce) = initialData
+//        val codeChallenge = initialData.codeChallenge
 
         // fetch and check the challenge
 
-        val challenge = fetchAndCheckUnsignedChallenge(
-            url = config.authorizationEndpoint,
-            codeChallenge = codeChallenge,
-            state = state,
-            nonce = nonce,
-            scope = scope,
-            pukSigKey = pukSigKey
-        )
+//        val challenge = fetchAndCheckUnsignedChallenge(
+//            url = config.authorizationEndpoint,
+//            codeChallenge = codeChallenge,
+//            state = state,
+//            nonce = nonce,
+//            scope = scope,
+//            pukSigKey = pukSigKey
+//        )
+
+        val ch = IdpUnsignedChallenge("blasigned", "bla", 2000000000)
 
         return IdpChallengeFlowResult(
             scope = scope,
-            challenge = challenge
+            challenge = ch
         )
     }
 
     suspend fun basicAuthFlow(
-        initialData: IdpInitialData,
+        //initialData: IdpInitialData,
         challengeData: IdpChallengeFlowResult,
         healthCardCertificate: ByteArray,
         sign: suspend (hash: ByteArray) -> ByteArray
     ): IdpAuthFlowResult {
-        val (config, pukSigKey, pukEncKey, state, nonce) = initialData
-        val codeVerifier = initialData.codeVerifier
+        //val (config, pukSigKey, pukEncKey, state, nonce) = initialData
+        //val codeVerifier = initialData.codeVerifier
 
         // sign [challengeBody] with the health card
 
@@ -271,38 +274,39 @@ class IdpBasicUseCase @Inject constructor(
             buildSignedChallenge(challengeData.challenge.signedChallenge, healthCardCertificate) {
                 sign(it)
             }
-        val encryptedSignedChallenge =
-            buildEncryptedSignedChallenge(
-                signedChallenge,
-                challengeData.challenge.expires,
-                pukEncKey.jws.publicKey
-            )
+        Log.d("myLogId", signedChallenge.toString())
+//        val encryptedSignedChallenge =
+//            buildEncryptedSignedChallenge(
+//                signedChallenge,
+//                challengeData.challenge.expires,
+//                pukEncKey.jws.publicKey
+//            )
 
         // post encrypted signed challenge & parse returned redirect url
 
-        val redirect = postSignedChallengeAndGetRedirect(
-            config.authorizationEndpoint,
-            codeChallenge = encryptedSignedChallenge,
-            state = state
-        )
+//        val redirect = postSignedChallengeAndGetRedirect(
+//            config.authorizationEndpoint,
+//            codeChallenge = encryptedSignedChallenge,
+//            state = state
+//        )
 
-        val redirectCodeJwe = IdpService.extractQueryParameter(redirect, "code")
-        val redirectSsoToken = IdpService.extractQueryParameter(redirect, "ssotoken")
+        val redirectCodeJwe = "code"//IdpService.extractQueryParameter(redirect, "code")
+        val redirectSsoToken = "ssotoken"//IdpService.extractQueryParameter(redirect, "ssotoken")
 
         // post [redirectCodeJwe] &b get the access token
 
-        val accessToken = postCodeAndDecryptAccessToken(
-            config.tokenEndpoint,
-            nonce = nonce,
-            codeVerifier = codeVerifier,
-            code = redirectCodeJwe,
-            pukEncKey = pukEncKey,
-            pukSigKey = pukSigKey
-        )
+//        val accessToken = postCodeAndDecryptAccessToken(
+//            config.tokenEndpoint,
+//            nonce = nonce,
+//            codeVerifier = codeVerifier,
+//            code = redirectCodeJwe,
+//            pukEncKey = pukEncKey,
+//            pukSigKey = pukSigKey
+//        )
 
         // final [redirectSsoToken] & [accessToken]
         return IdpAuthFlowResult(
-            accessToken = accessToken,
+            accessToken = "bla",//accessToken,
             ssoToken = redirectSsoToken
         )
     }

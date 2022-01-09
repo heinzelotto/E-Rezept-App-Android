@@ -51,7 +51,6 @@ class Tracker @Inject constructor(
         get() = _trackingAllowed
 
     private val prefsName = "pro.piwik.sdk_" + Checksum.getMD5Checksum(trackerName)
-    private var tracker: Tracker = initTracker()
 
     private fun initTracker(): Tracker {
         Timber.d("Init tracker")
@@ -86,20 +85,14 @@ class Tracker @Inject constructor(
 
     fun allowTracking() {
         _trackingAllowed.value = true
-        tracker.isOptOut = false
 
         Timber.d("Tracking allowed")
     }
 
     fun disallowTracking() {
-        tracker.preferences.edit(commit = true) {
-            clear()
-        }
-        tracker = initTracker()
     }
 
     fun trackScreen(path: String) {
-        TrackHelper.track().screen(path).with(tracker)
     }
 }
 

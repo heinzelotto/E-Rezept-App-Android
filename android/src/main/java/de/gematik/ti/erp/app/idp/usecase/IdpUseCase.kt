@@ -151,11 +151,11 @@ class IdpUseCase @Inject constructor(
         healthCardCertificate: suspend () -> ByteArray,
         sign: suspend (hash: ByteArray) -> ByteArray
     ) = lock.withLock {
-        val initialData = basicUseCase.initializeConfigurationAndKeys()
-        val challengeData = basicUseCase.challengeFlow(initialData, scope = IdpScope.Default)
+        //val initialData = basicUseCase.initializeConfigurationAndKeys()
+        val challengeData = basicUseCase.challengeFlow(/*initialData,*/ scope = IdpScope.Default)
         val activeProfileName = profilesUseCase.activeProfileName().first()
         val basicData = basicUseCase.basicAuthFlow(
-            initialData = initialData,
+            //initialData = initialData,
             challengeData = challengeData,
             healthCardCertificate = healthCardCertificate(),
             sign = sign
@@ -163,10 +163,10 @@ class IdpUseCase @Inject constructor(
         val ssoToken = SingleSignOnToken(
             token = basicData.ssoToken
         )
-        repository.setSingleSignOnToken(activeProfileName, ssoToken)
-        repository.decryptedAccessTokenMap.update { decryptedAccessTokenMap ->
-            decryptedAccessTokenMap + (activeProfileName to basicData.accessToken)
-        }
+//        repository.setSingleSignOnToken(activeProfileName, ssoToken)
+//        repository.decryptedAccessTokenMap.update { decryptedAccessTokenMap ->
+//            decryptedAccessTokenMap + (activeProfileName to basicData.accessToken)
+//        }
     }
 
     /**
@@ -262,10 +262,10 @@ class IdpUseCase @Inject constructor(
     ) = lock.withLock {
         val initialData = basicUseCase.initializeConfigurationAndKeys()
         val challengeData =
-            basicUseCase.challengeFlow(initialData, scope = IdpScope.BiometricPairing)
+            basicUseCase.challengeFlow(/*initialData,*/ scope = IdpScope.BiometricPairing)
         val healthCardCert = healthCardCertificate()
         val basicData = basicUseCase.basicAuthFlow(
-            initialData = initialData,
+            //initialData = initialData,
             challengeData = challengeData,
             healthCardCertificate = healthCardCert,
             sign = signWithHealthCard
@@ -318,7 +318,7 @@ class IdpUseCase @Inject constructor(
         }
 
         val initialData = basicUseCase.initializeConfigurationAndKeys()
-        val challengeData = basicUseCase.challengeFlow(initialData, scope = IdpScope.Default)
+        val challengeData = basicUseCase.challengeFlow(/*initialData,*/ scope = IdpScope.Default)
 
         val authData = altAuthUseCase.authenticateWithSecureElement(
             initialData = initialData,

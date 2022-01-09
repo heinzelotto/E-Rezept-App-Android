@@ -22,6 +22,7 @@ import android.nfc.TagLostException
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import android.util.Log
 import androidx.annotation.RequiresApi
 import de.gematik.ti.erp.app.api.ApiCallException
 import de.gematik.ti.erp.app.cardwall.model.nfc.card.NfcCardChannel
@@ -53,6 +54,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import org.jose4j.base64url.Base64
 import org.json.JSONObject
 import timber.log.Timber
 import java.io.IOException
@@ -394,7 +396,11 @@ class AuthenticationUseCaseProduction @Inject constructor(
         )
         send(AuthenticationState.HealthCardCommunicationTrustedChannelEstablished)
 
-        healthCardCertificateChannel.send(secChannel.retrieveCertificate())
+        val certBytes = secChannel.retrieveCertificate()
+        Log.d("myLogId", Base64.encode(certBytes))
+        //val cert = X509Certificate(certBytes)
+
+        healthCardCertificateChannel.send(certBytes)
         send(AuthenticationState.HealthCardCommunicationCertificateLoaded)
 
         when (secChannel.verifyPin(pin)) {

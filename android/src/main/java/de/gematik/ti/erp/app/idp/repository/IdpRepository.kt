@@ -29,7 +29,9 @@ import de.gematik.ti.erp.app.idp.api.models.AuthenticationIDList
 import de.gematik.ti.erp.app.idp.api.models.AuthorizationRedirectInfo
 import de.gematik.ti.erp.app.idp.api.models.Challenge
 import de.gematik.ti.erp.app.idp.api.models.IdpDiscoveryInfo
+import de.gematik.ti.erp.app.idp.api.models.JWSPublicKey
 import de.gematik.ti.erp.app.idp.api.models.PairingResponseEntry
+import de.gematik.ti.erp.app.idp.api.models.TokenResponse
 import de.gematik.ti.erp.app.idp.usecase.IdpNonce
 import de.gematik.ti.erp.app.idp.usecase.IdpState
 import de.gematik.ti.erp.app.idp.usecase.IdpUseCase
@@ -60,8 +62,8 @@ value class JWSDiscoveryDocument(val jws: JsonWebSignature)
 data class SingleSignOnToken(
     val token: String,
     val scope: Scope = Scope.Default,
-    val expiresOn: Instant = extractExpirationTimestamp(token),
-    val validOn: Instant = extractValidOnTimestamp(token)
+    val expiresOn: Instant = Instant.now(),//extractExpirationTimestamp(token),
+    val validOn: Instant = Instant.now(),// extractValidOnTimestamp(token)
 ) {
     enum class Scope {
         Default,
@@ -86,7 +88,7 @@ fun extractValidOnTimestamp(ssoToken: String): Instant =
 @Singleton
 class IdpRepository @Inject constructor(
     moshi: Moshi,
-    private val remoteDataSource: IdpRemoteDataSource,
+    //private val remoteDataSource: IdpRemoteDataSource,
     private val localDataSource: IdpLocalDataSource,
     @NetworkSecureSharedPreferences private val securePrefs: SharedPreferences
 ) {
@@ -173,65 +175,82 @@ class IdpRepository @Inject constructor(
         state: String,
         nonce: String,
         isDeviceRegistration: Boolean = false
-    ): Result<Challenge> =
-        remoteDataSource.fetchChallenge(url, codeChallenge, state, nonce, isDeviceRegistration)
+    ): Result<Challenge>  {
+        return de.gematik.ti.erp.app.api.Result.Error(Exception())
+    }
+        //remoteDataSource.fetchChallenge(url, codeChallenge, state, nonce, isDeviceRegistration)
 
     /**
      * Returns an unchecked and possible invalid idp configuration parsed from the discovery document.
      */
     suspend fun loadUncheckedIdpConfiguration(): IdpConfiguration {
-        return localDataSource.loadIdpInfo() ?: run {
-            when (val r = remoteDataSource.fetchDiscoveryDocument()) {
-                is Result.Error -> throw r.exception
-                is Result.Success -> extractUncheckedIdpConfiguration(r.data).also {
-                    localDataSource.saveIdpInfo(
-                        it
-                    )
-                }
-            }
-        }
+//        return localDataSource.loadIdpInfo() ?: run {
+//            when (val r = remoteDataSource.fetchDiscoveryDocument()) {
+//                is Result.Error -> throw r.exception
+//                is Result.Success -> extractUncheckedIdpConfiguration(r.data).also {
+//                    localDataSource.saveIdpInfo(
+//                        it
+//                    )
+//                }
+//            }
+//        }
+        throw Exception()
     }
 
-    suspend fun postSignedChallenge(url: String, signedChallenge: String): Result<String> =
-        remoteDataSource.postChallenge(url, signedChallenge)
+    suspend fun postSignedChallenge(url: String, signedChallenge: String): Result<String> {
+        return de.gematik.ti.erp.app.api.Result.Success("OK done")
+    }
+        //remoteDataSource.postChallenge(url, signedChallenge)
+
 
     suspend fun postUnsignedChallengeWithSso(
         url: String,
         ssoToken: String,
         unsignedChallenge: String
-    ): Result<String> =
-        remoteDataSource.postChallenge(url, ssoToken, unsignedChallenge)
+    ): Result<String> {
+        return de.gematik.ti.erp.app.api.Result.Success("OK done")
+
+    }
+        //remoteDataSource.postChallenge(url, ssoToken, unsignedChallenge)
 
     suspend fun postToken(
         url: String,
         keyVerifier: String,
         code: String,
         redirectUri: String = REDIRECT_URI
-    ) =
-        remoteDataSource.postToken(
-            url,
-            keyVerifier = keyVerifier,
-            code = code,
-            redirectUri = redirectUri
-        )
+    ): Result<TokenResponse> {
+        return de.gematik.ti.erp.app.api.Result.Error(Exception())
+
+    }
+//        remoteDataSource.postToken(
+//            url,
+//            keyVerifier = keyVerifier,
+//            code = code,
+//            redirectUri = redirectUri
+//        )
 
     suspend fun fetchExternalAuthorizationIDList(
         url: String,
         idpPukSigKey: PublicKey,
     ): List<AuthenticationID> {
-        val jwtResult = remoteDataSource.fetchExternalAuthorizationIDList(url)
-        if (jwtResult is Result.Success<JsonWebSignature>) {
-            return extractAuthenticationIDList(jwtResult.data.apply { key = idpPukSigKey }.payload)
-        } else {
-            error("couldn't extract authentication ID List")
-        }
+//        val jwtResult = remoteDataSource.fetchExternalAuthorizationIDList(url)
+//        if (jwtResult is Result.Success<JsonWebSignature>) {
+//            return extractAuthenticationIDList(jwtResult.data.apply { key = idpPukSigKey }.payload)
+//        } else {
+//            error("couldn't extract authentication ID List")
+//        }
+        return listOf()
     }
 
-    suspend fun fetchIdpPukSig(url: String) =
-        remoteDataSource.fetchIdpPukSig(url)
+    suspend fun fetchIdpPukSig(url: String): Result<JWSPublicKey> {
+        return de.gematik.ti.erp.app.api.Result.Error(Exception())
+    }
+        //remoteDataSource.fetchIdpPukSig(url)
 
-    suspend fun fetchIdpPukEnc(url: String) =
-        remoteDataSource.fetchIdpPukEnc(url)
+    suspend fun fetchIdpPukEnc(url: String): Result<JWSPublicKey> {
+        return de.gematik.ti.erp.app.api.Result.Error(Exception())
+    }
+        //remoteDataSource.fetchIdpPukEnc(url)
 
     private fun parseDiscoveryDocumentBody(body: String): IdpDiscoveryInfo =
         requireNotNull(discoveryDocumentBodyAdapter.fromJson(body)) { "Couldn't parse discovery document" }
@@ -282,27 +301,35 @@ class IdpRepository @Inject constructor(
         url: String,
         encryptedRegistrationData: String,
         token: String
-    ): Result<PairingResponseEntry> =
-        remoteDataSource.postPairing(
-            url,
-            token = token,
-            encryptedRegistrationData = encryptedRegistrationData
-        )
+    ): Result<PairingResponseEntry>
+    {
+        return de.gematik.ti.erp.app.api.Result.Error(Exception())
+    }
+//    =
+//        remoteDataSource.postPairing(
+//            url,
+//            token = token,
+//            encryptedRegistrationData = encryptedRegistrationData
+//        )
 
     suspend fun postBiometricAuthenticationData(
         url: String,
         encryptedSignedAuthenticationData: String
-    ): Result<String> =
-        remoteDataSource.authorizeBiometric(url, encryptedSignedAuthenticationData)
+    ): Result<String> {
+        return de.gematik.ti.erp.app.api.Result.Error(Exception())
+    }
+        //remoteDataSource.authorizeBiometric(url, encryptedSignedAuthenticationData)
 
     suspend fun postExternAppAuthorizationData(
         url: String,
         externalAuthorizationData: IdpUseCase.ExternalAuthorizationData
-    ): Result<String> =
-        remoteDataSource.authorizeExtern(
-            url = url,
-            externalAuthorizationData = externalAuthorizationData
-        )
+    ): Result<String>{
+        return de.gematik.ti.erp.app.api.Result.Error(Exception())
+    }
+//        remoteDataSource.authorizeExtern(
+//            url = url,
+//            externalAuthorizationData = externalAuthorizationData
+//        )
 
     suspend fun invalidate(profileName: String) {
         try {
@@ -344,16 +371,17 @@ class IdpRepository @Inject constructor(
         nonce: IdpNonce,
         kkAppId: String
     ): String {
-        val result = remoteDataSource.requestAuthorizationRedirect(
-            url = url, externalAppId = kkAppId,
-            codeChallenge = codeChallenge,
-            nonce = nonce.nonce,
-            state = state.state
-        )
-        if (result is Result.Success) {
-            return result.data
-        } else {
-            throw (result as Result.Error).exception
-        }
+//        val result = remoteDataSource.requestAuthorizationRedirect(
+//            url = url, externalAppId = kkAppId,
+//            codeChallenge = codeChallenge,
+//            nonce = nonce.nonce,
+//            state = state.state
+//        )
+//        if (result is Result.Success) {
+//            return result.data
+//        } else {
+//            throw (result as Result.Error).exception
+//        }
+        return "OK done"
     }
 }
